@@ -241,7 +241,7 @@ export default function AdminService(){
                                     companyId:e.companyId,
                                     email:e.email === 'plane' ? filterData[0].email:e.email,
                                     password:e.password === 'plane' ? filterData[0].password:bcryptPwData,
-                                    name:e.name === 'plane' ? filterData[0].name:e.name,
+                                    name:e.name,
                                     phone:e.phone === 'plane' ? filterData[0].phone:e.phone,
                                     admin:e.admin === 'plane' ? filterData[0].admin:e.admin,
                                 }
@@ -272,20 +272,165 @@ export default function AdminService(){
             if(params === 'delAdmin'){
                 Company.find({company:data.company})
                     .then(allData=>{
+                        let basicData = []
                         let filterData = []
                         allData[0].responsibility.map(item=>{
-                            if(item.companyId === data.companyId){
-                                filterData.push(item)
-                            }
+                            data.delPoint.map(e=>{
+                                if(item.companyId === e.id){
+                                   filterData.push(item)
+                                }
+                            })
+                            basicData.push(item)
                         })
-                        console.log(filterData)
+                        let finalData = {
+                            responsibility: basicData.concat(filterData).filter(item=> !basicData.includes(item) || !filterData.includes(item))
+                        }
+
+                        Company.findOneAndUpdate({company:data.company},{$set:finalData})
+                            .then(suc=>{
+                                res.status(200).send('기업 아이디가 정상적으로 삭제되었습니다.')
+                            })
+                            .catch(err=>{
+                                res.status(400).send(err)
+                            })
+
                     })
                     .catch(err=>{
                         res.status(400).send(err)
                     })
             }
 
+            if(params === 'upload'){
+                let uploadData = data.upload
+                let bodyData = [];
+                uploadData.filter((names)=>{
+                    let dbs = {
+                        company:names['회사명'],
+                        companyId:names['기업 아이디'],
+                        name:names['담당자 이름'],
+                        password:names['비밀번호'],
+                        phone:names['담당자 전화번호'],
+                        email:names['담당자 이메일'],
+                        admin:names['관리자 여부'] === 'O' ? true:false
+                    }
+                    bodyData.push(dbs)
+                })
+                //console.log(bodyData)
+                Company.find({company:data.company})
+                    .then(allData=>{
+                        let basicData =[]
+                        let newData =[]
+                        let defaultData =[]
+                        let updateData = []
+                        let duplicateId = false
+                        let duplicatePhone = false
+                        let duplicateEmail = false
+
+                        allData[0].responsibility.map(item=>{
+                            bodyData.map(e=>{
+                                let bcryptPwData
+                                if(e.password !== undefined){
+                                    bcryptPwData = bcrypt.hashSync(e.password, 10)
+                                }
+
+                                if(item.companyId === e.companyId && item.name === e.name){
+                                    let pushData ={
+                                        _id:item._id,
+                                        companyId:item.companyId,
+                                        name:item.name,
+                                        password: e.password === undefined ? item.password : bcryptPwData,
+                                        phone: e.phone !== item.phone ? e.phone : item.phone,
+                                        email: e.email !== item.email ? e.email : item.email,
+                                        admin: e.admin !== item.admin ? e.admin : item.admin
+                                    }
+                                    updateData.push(pushData)
+                                    newData.push(e)
+                                    defaultData.push(item)
+                                }else{
+                                    if(item.companyId === e.companyId){
+                                        duplicateId =true
+                                    }
+                                    if(item.phone === e.phone){
+                                        duplicatePhone =true
+                                    }
+                                    if(item.email === e.email){
+                                        duplicateEmail =true
+                                    }
+                                }
+                            })
+                            basicData.push(item)
+                        })
+                        let newUploadData = bodyData.concat(newData).filter(item=> !bodyData.includes(item) || !newData.includes(item))
+                        let defaultDbData = basicData.concat(defaultData).filter(item=> !basicData.includes(item) || !defaultData.includes(item))
+
+                        if(duplicateId === true){
+                            res.status(400).send('사용중인 기업아이디가 있습니다. 다시 한번 확인해주세요.')
+                        }else if(duplicatePhone === true){
+                            res.status(400).send('사용중인 담당자 전화번호 입니다. 다시 한번 확인해주세요.')
+                        }else if(duplicateEmail === true){
+                            res.status(400).send('사용중인 담당자 이메일 입니다. 다시 한번 확인해주세요.')
+                        }else{
+                            //업데이트데이터, 디폴트데이터 끝
+                            let filterData =[]
+                            newUploadData.map(item=>{
+                                const bcryptPwData = bcrypt.hashSync(item.password, 10)
+                                let pushData ={
+                                    companyId:item.companyId,
+                                    name:item.name,
+                                    password: bcryptPwData,
+                                    phone: item.phone,
+                                    email: item.email,
+                                    admin: item.admin
+                                }
+                                filterData.push(pushData)
+                            })
+                            let finalData = {
+                                responsibility: [...defaultDbData,...updateData,...filterData]
+                            }
+
+                            Company.findOneAndUpdate({company:data.company},{$set:finalData})
+                                .then(suc=>{
+                                    res.status(200).send('엑셀 업로드가 완료되었습니다.')
+                                })
+                                .catch(err=>{
+                                    res.status(400).send(err)
+                                })
+
+                        }
+
+                    })
+            }
+
+            if(params === 'download'){
+                try {
+                    const data = req.body;
+
+                    let bodyData = [];
+
+                    data.filter((names)=>{
+                        let dbs = {
+                            '회사명':names.company,
+                            '기업 아이디':names.id,
+                            '담당자 이름':names.name,
+                            '담당자 전화번호':names.phone,
+                            '담당자 이메일':names.email,
+                            '관리자 여부':names.admin
+                        }
+                        bodyData.push(dbs)
+                    })
+                    res.status(200).send(bodyData)
+
+
+
+                }catch (e){
+                    if(e.name === 'TokenExpiredError'){
+                        res.status(500).send('로그인 시간이 만료되었습니다.')
+                    }
+                }
+            }
+
         },
+
 
 
     }
