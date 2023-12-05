@@ -141,9 +141,6 @@ export default function CorporationService(){
                                             let managerEx = moment(day).add(10,'hours').format('YYYY-MM-DD kk:mm:ss')
                                             const companyToken = jwt.sign({
                                                 company:companyInfo.company,
-                                                organizations:companyInfo.organizations,
-                                                macAddress:companyInfo.macAddress,
-                                                responsibility:companyInfo.responsibility,
                                                 loginId:data.companyId,
                                                 admin:true,
                                                 manager:true,
@@ -168,9 +165,6 @@ export default function CorporationService(){
                                         }else{
                                             const companyToken = jwt.sign({
                                                 company:companyInfo.company,
-                                                organizations:companyInfo.organizations,
-                                                macAddress:companyInfo.macAddress,
-                                                responsibility:companyInfo.responsibility,
                                                 loginId:data.companyId,
                                                 manager:false,
                                                 admin:true,
@@ -203,9 +197,6 @@ export default function CorporationService(){
 
                                         const companyToken = jwt.sign({
                                             company:companyInfo.company,
-                                            organizations:companyInfo.organizations,
-                                            macAddress:companyInfo.macAddress,
-                                            responsibility:companyInfo.responsibility,
                                             loginId:data.companyId,
                                             manager:false,
                                             admin:false,

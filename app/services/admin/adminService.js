@@ -2,6 +2,7 @@ import applyDotenv from "../../Lambdas/applyDotenv.js";
 import dotenv from "dotenv";
 import db from "../../DataBase/index.js";
 import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
 
 
 export default function AdminService(){
@@ -162,6 +163,207 @@ export default function AdminService(){
         companyInfoUpdate(req,res){
             const data = req.body
             const params = req.query.contents
+            const types = req.query.type
+            const loadType = req.query.loadType
+
+            if(params === 'organization'){
+                if(types === 'create'){
+                    Company.find({company:data.company})
+                        .then(allData=>{
+                            let duplicateDepartment = false
+                            let basicData = []
+                            allData[0].organizations.map(e=>{
+                                if(e.department === data.data.department){
+                                    duplicateDepartment = true
+                                }
+                                basicData.push(e)
+                            })
+                            if(duplicateDepartment === true){
+                                res.status(400).send(`요청하신 부서 : ${data.data.department}는(은) 이미 등록된 부서명 입니다.`)
+                            }else{
+                                let setData = { organizations: [...basicData,data.data]}
+                                Company.findOneAndUpdate({company:data.company},{$set:setData})
+                                    .then(suc=>{
+                                        res.status(200).send('Success')
+                                    })
+                                    .catch(err=>{
+                                        res.status(400).send(err)
+                                    })
+                            }
+                        })
+                }
+                if(types === 'update'){
+                    let basicData = []
+                    let filterData = []
+                    Company.find({company:data.company})
+                        .then(allData=>{
+                            allData[0].organizations.map(item=>{
+                                    if(item.department === data.basicData.id){
+                                        filterData.push(item)
+                                    }
+                                basicData.push(item)
+                            })
+                            const filterBasic = basicData.concat(filterData).filter(item=> !basicData.includes(item) || !filterData.includes(item))
+                            let finalData = {
+                                organizations: [...filterBasic,data.data]
+                            }
+                            Company.findOneAndUpdate({company:data.company},{$set:finalData})
+                                .then(suc=>{
+                                    res.status(200).send('Success')
+                                })
+                                .catch(e=>{
+                                    res.status(400).send(e)
+                                })
+                        })
+                        .catch(err=>{
+                            res.status(400).send(err)
+                        })
+                }
+                if(types === 'del'){
+                    let basicData = []
+                    let filterData = []
+                    Company.find({company:data.company})
+                        .then(allData=>{
+                            allData[0].organizations.map(item=>{
+                                data.delPoint.map(e=>{
+                                    if(item.department === e.id){
+                                        filterData.push(item)
+                                    }
+                                })
+                                basicData.push(item)
+                            })
+                            let finalData = {
+                                organizations: basicData.concat(filterData).filter(item=> !basicData.includes(item) || !filterData.includes(item))
+                            }
+                            Company.findOneAndUpdate({company:data.company},{$set:finalData})
+                                .then(suc=>{
+                                    res.status(200).send('부서 정보가 정상적으로 삭제되었습니다.')
+                                })
+                                .catch(err=>{
+                                    res.status(400).send(err)
+                                })
+                        })
+
+                }
+
+                if(types === 'excel'){
+
+                    if(loadType === 'Download'){
+                        try {
+                            let bodyData = [];
+
+                            data.filter((names)=>{
+                                let dbs = {
+                                    '회사명':names.company,
+                                    '부서':names.id,
+                                    '직급':names.position
+                                }
+                                bodyData.push(dbs)
+                            })
+                            res.status(200).send(bodyData)
+
+                        }catch (e){
+                            if(e.name === 'TokenExpiredError'){
+                                res.status(500).send('로그인 시간이 만료되었습니다.')
+                            }
+                        }
+                    }
+                    if(loadType === 'Upload'){
+
+                        let uploadData = data.upload
+                        let bodyData = [];
+                        uploadData.filter((names)=>{
+                            let dbs = {
+                                department:names['부서'],
+                                position:names['직급'].split(',')
+                            }
+                            bodyData.push(dbs)
+                        })
+                        Company.find({company:data.company})
+                            .then(allData=>{
+                                //부서 명 중복 확인(부서명 변경없음 데이터 추가됨- 정보가 2개라서), 부서명이 중복이면 직급 변경된지 확인
+                                //부서명이 중복이면 => 직급 변경 없을 시 그대로 적용(변경시도 적용)
+                                //부서명이 없으면 => 생성
+                                let basicData = []
+                                let duplicateDeepartment = []
+                                allData[0].organizations.map(e=>{
+                                    bodyData.map(item=>{
+                                        if(item.department === e.department){
+                                            duplicateDeepartment.push(e)
+                                        }
+                                    })
+                                    basicData.push(e)
+                                })
+                                //기존 데이터들 유지
+                                const basicAddData = basicData.concat(duplicateDeepartment).filter(item=> !basicData.includes(item) || !duplicateDeepartment.includes(item))
+                                let finalData = {organizations:[...basicAddData,...bodyData]}
+                                Company.findOneAndUpdate({company:data.company},{$set:finalData})
+                                    .then(suc=>{
+                                        res.status(200).send('Success')
+                                    })
+                                    .catch(err=>{
+                                        res.status(400).send(err)
+                                    })
+                            })
+
+                    }
+                }
+
+
+            }
+
+            if(params === 'macAddress'){
+                Company.find({})
+                    .then(allData=>{
+                        let duplicateMac = false
+                        let duplicateNumber =[]
+                        allData.map(allCompany=>{
+                            allCompany.macAddress.map(item=>{
+                                if(allCompany.company !== data.company){
+                                    data.macInfo.map(e=>{
+                                        if(e === item){
+                                            duplicateMac = true
+                                            duplicateNumber.push(e)
+                                        }
+                                    })
+                                }
+                            })
+                        })
+                        if(duplicateMac === true){
+                            res.status(400).send(`MacAddress : '${duplicateNumber}' 가 이미 사용 중입니다. 기기번호를 다시 한번 확인해주세요.`)
+                        }else{
+                            let setData = {macAddress:[...data.macInfo]}
+                            Company.findOneAndUpdate({company:data.company},{$set:setData})
+                                .then(suc=>{
+                                    const tokenData =req.cookies.companyInfoToken
+                                    const verify = jwt.verify(tokenData,COMPANY_SECRET)
+                                    Company.find({company:data.company})
+                                        .then(findData=>{
+                                            let sendData = {
+                                                company:findData[0].company,
+                                                organizations:findData[0].organizations,
+                                                macAddress:findData[0].macAddress,
+                                                responsibility:findData[0].responsibility,
+                                                loginId:verify.loginId,
+                                                manager:verify.manager,
+                                                admin:verify.admin,
+                                                approval: verify.approval,
+                                                expireTime:verify.expireTime
+                                            }
+                                            res.status(200).json({
+                                                msg:`MacAddress 수정 및 등록이 완료되었습니다.`,
+                                                data:sendData
+                                        })
+                                        })
+
+                                })
+                                .catch(err=>{
+                                    res.status(400).send(err)
+                                })
+                        }
+                    })
+            }
+
 
             if(params === "companyIdRegister"){
                 Company.find({company:data.company})
@@ -299,6 +501,8 @@ export default function AdminService(){
                         res.status(400).send(err)
                     })
             }
+
+
 
             if(params === 'upload'){
                 let uploadData = data.upload

@@ -251,9 +251,6 @@ export default function UserService(){
                         //어드민
                         const companyToken = jwt.sign({
                             company:companyInfo.company,
-                            organizations:companyInfo.organizations,
-                            macAddress:companyInfo.macAddress,
-                            responsibility:companyInfo.responsibility,
                             loginId:data.companyId,
                             manager:false,
                             admin:true,
@@ -262,7 +259,7 @@ export default function UserService(){
                         },COMPANY_SECRET,{expiresIn:'1h'})
 
                         res.cookie('companyInfoToken',companyToken,{
-                            secure:false,
+                            secure:true,
                             httpOnly:true
                         })
                         let sendData = {
@@ -288,9 +285,6 @@ export default function UserService(){
                                 .then(user=>{
                                     const companyToken = jwt.sign({
                                         company:companyInfo.company,
-                                        organizations:companyInfo.organizations,
-                                        macAddress:companyInfo.macAddress,
-                                        responsibility:companyInfo.responsibility,
                                         loginId:data.companyId,
                                         manager:false,
                                         admin:false,
