@@ -211,7 +211,7 @@ export default function UserService(){
             const data = req.body
             User.findOneAndUpdate({company:data.company, userId:data.userId}, {$set:data})
                 .then(datas=>{
-                    User.findOne({company:datas.company,userId:data.userId})
+                    User.findOne({company:data.company,userId:data.userId})
                         .then(updateData=>{
                             res.status(200).send(updateData)
                         })
