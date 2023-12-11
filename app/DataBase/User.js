@@ -3,17 +3,15 @@ import bcrypt from 'bcrypt'
 //회원가입 로그인(암호화적용되어있음)
 export default function User(mongoose){
     const userSchema = new mongoose.Schema({
-        company: {type:String},
-        department: {type:String},
-        position: {type:String},
-        name: {type:String, required: true, min:2},
-        birth:{type:String, required: true},
-        userId: {type:String, unique: true, required: true, min:10},
-        password: {type:String, required: true, trim: true},
-        phone: {type:String, unique: true, required:true, min:13},
-        joinDate: {type:String},
-        workTime: {type:String, trim: true},
-        lunchTime: {type:String}
+        company: {type: String},
+        affiliation: {type: {department: String, position: String, macAddress: [String]}},
+        name: {type: String, required: true, min: 2},
+        userId: {type: String, unique: true, required: true, min: 10},
+        password: {type: String, required: true, trim: true},
+        phone: {type: String, unique: true, required: true, min: 13},
+        break: {type: {year: Number, month: Number, special: {family: Number, maternity: Number}}},
+        form: {type: {normal: Boolean, admin: Boolean, manager: Boolean}},
+        etc: {type: {birth: String, joinDate: String, workTime: String, lunchTime: String}},
     },{ versionKey : false });
 
     userSchema.pre('save', function (next){

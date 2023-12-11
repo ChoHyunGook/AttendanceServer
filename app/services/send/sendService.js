@@ -89,8 +89,7 @@ export default function SendService(){
             })
 
         },
-        companyApproval(req,res){
-            const data = req.body
+        SMSService(req,res){
             const user_phone = req.body.phone
             const phoneNumber = user_phone.split("-").join("");
             const phoneSubject = req.body.phoneSubject
@@ -121,7 +120,7 @@ export default function SendService(){
                     type: "SMS",
                     countryCode: "82",
                     from: smsPhone,
-                    content: `[Attendance Magagement]\n [${phoneSubject} 서비스]\n 인증번호는 [${authNum}] 입니다.`,
+                    content: `[WeToGo]\n [${phoneSubject} 서비스]\n 인증번호는 [${authNum}] 입니다.`,
                     messages: [{to: `${phoneNumber}`}],
                 },
             });

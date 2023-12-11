@@ -1,7 +1,6 @@
 import express from "express";
 import cors from "cors"
 import dotenv from "dotenv"
-import CompanyService from "../../services/user/corporation/CorporationService.js";
 import TokenService from "../../services/data/tokenService.js";
 dotenv.config()
 
@@ -29,9 +28,6 @@ app.use(function(_req, res, next) {
 });
 
 
-app.get('/selectInfo',cors(corsOptions),(req,res)=>{
-    CompanyService().companyInfo(req,res)
-})
 
 app.post('/checkToken',cors(corsOptions),(req,res)=>{
     TokenService().checkToken(req,res)

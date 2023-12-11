@@ -32,8 +32,8 @@ app.post('/smsRegister',cors(corsOptions),(req,res)=>{
     SendService().RegisterSMS(req,res)
 })
 
-app.post('/smsCompany',cors(corsOptions),(req,res)=>{
-    SendService().companyApproval(req,res)
+app.post('/SMSService',cors(corsOptions),(req,res)=>{
+    SendService().SMSService(req,res)
 })
 
 

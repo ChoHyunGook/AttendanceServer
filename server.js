@@ -11,7 +11,6 @@ import ResponseService from "./app/Lambdas/response.js";
 import User from './app/routes/user/User.js'
 import Send from './app/routes/send/Send.js'
 import Data from './app/routes/data/Data.js'
-import Corporation from './app/routes/user/Corporation.js'
 import Admin from "./app/routes/admin/Admin.js";
 
 
@@ -47,7 +46,6 @@ async function startServer(){
     app.use('/user',User)
     app.use('/send',Send)
     app.use('/data',Data)
-    app.use('/company',Corporation)
     app.use('/admin',Admin)
 
 

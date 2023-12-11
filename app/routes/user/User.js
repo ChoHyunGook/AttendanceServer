@@ -1,7 +1,7 @@
 import express from "express";
 import cors from "cors"
 import dotenv from "dotenv"
-import UserService from "../../services/user/individual/userService.js";
+import UserService from "../../services/user/userService.js";
 dotenv.config()
 
 
@@ -41,7 +41,7 @@ app.get('/logout',cors(corsOptions),(req,res)=>{
     UserService().logout(req,res)
 })
 app.post('/findService',cors(corsOptions),(req,res)=>{
-    UserService().findService(req,res)
+    UserService().find(req,res)
 })
 app.post('/addInfo',cors(corsOptions),(req,res)=>{
     UserService().addInfo(req,res)

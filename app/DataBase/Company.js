@@ -9,10 +9,8 @@
 export default function CompanyInfo(mongoose) {
     const CompanySchema = new mongoose.Schema({
         company: {type: String},
-        organizations: {type:[{department:String,position:[String]}]},
-        macAddress:{type:[String]},
-        responsibility:{type:[{companyId:String,email:String,password:String,name:String,phone:String,admin:Boolean,manager:Boolean}]},
-        approval:{type:Boolean,require:true}
+        organizations: {type:[{department:String,position:[{name:String,mac:[String]}]}]},
+        macAddress:{type:[String]}
     }, {versionKey: false})
 
     return mongoose.model('CompanyInfo', CompanySchema)
