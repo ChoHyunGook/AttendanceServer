@@ -27,14 +27,16 @@ app.use(function(_req, res, next) {
     next();
 });
 
-app.post('/get/data',cors(corsOptions),(req,res)=>{
+app.get('/get/adminService',cors(corsOptions),(req,res)=>{
     AdminService().getData(req,res)
 })
-app.post('/find/data',cors(corsOptions),(req,res)=>{
-    AdminService().findData(req,res)
+
+app.post('/organizations/service',cors(corsOptions),(req,res)=>{
+    AdminService().adminService(req,res)
 })
-app.post('/companyInfoUpdate',cors(corsOptions),(req,res)=>{
-    AdminService().companyInfoUpdate(req,res)
+
+app.post('/find/service',cors(corsOptions),(req,res)=>{
+    AdminService().findService(req,res)
 })
 
 
