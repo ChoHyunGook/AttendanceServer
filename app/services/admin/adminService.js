@@ -19,6 +19,7 @@ export default function AdminService(){
                 .then(companyData=>{
                     User.find({company:company})
                         .then(userData=>{
+
                             res.status(200).json({companyData:companyData,userData:userData})
                         })
                         .catch(err=>{
@@ -222,74 +223,10 @@ export default function AdminService(){
                                                                 }
                                                             })
 
-
-                                                        //                 Company.findOne({company:data.company})
-                                                        //                     .then(findData=>{
-                                                        //                         if(sendUser === true){
-                                                        //                             User.findOne({userId:data.loginData.info.userId,phone:data.loginData.info.phone})
-                                                        //                                 .then(user=>{
-                                                        //                                     let sendUserData = {
-                                                        //                                         company: user.company,
-                                                        //                                         affiliation:user.affiliation,
-                                                        //                                         info:{name:user.name,userId: user.userId,
-                                                        //                                             phone: user.phone},
-                                                        //                                         break:user.break,
-                                                        //                                         form:user.form,
-                                                        //                                         etc:user.etc,
-                                                        //                                         expiresDate:data.loginData.expiresDate
-                                                        //                                     }
-                                                        //
-                                                        //                                     res.status(200).json({msg:`부서 ${data.organizations.department}의 정보가 수정 되었습니다.`
-                                                        //                                         ,companyData:findData,userData:sendUserData})
-                                                        //                                 })
-                                                        //                         }else{
-                                                        //                             res.status(200).json({msg:`부서 ${data.organizations.department}의 정보가 수정 되었습니다.`
-                                                        //                                 ,companyData:findData,userData:'None'})
-                                                        //                         }
-                                                        //                     })
-                                                        //                     .catch(err=>{
-                                                        //                         res.status(400).send(err)
-                                                        //                     })
-                                                        //
-                                                        //
-                                                        //
-                                                        //             })
-                                                        //
-                                                        //     })
-                                                        //     .catch(err=>{
-                                                        //         res.status(400).send(err)
-                                                        //     })
-
                                                     })
                                             })
                                     }
 
-
-
-                                    // userAllData.map(item=>{
-                                    //     if(item.affiliation.department === data.organizations.department){
-                                    //         if(item.affiliation.position === data.basicData.position.name){
-
-                                    //         }
-                                    //     }
-                                    // })
-                                    //
-                                    // let changeData = {
-                                    //     department:data.organizations.department,
-                                    //     position:[data.organizations.position,...filterData]
-                                    // }
-                                    // let setData = {organizations:[changeData,...basicData]}
-                                    // Company.findOneAndUpdate({company:data.company},{$set:setData})
-                                    //     .then(suc=>{
-
-                                    //             .then(suc2=>{
-                                    //                 let sendUser = false
-                                    //                 userfilterData.map(item=>{
-                                    //                     if(item.userId === data.loginData.info.userId){
-                                    //                         sendUser = true
-                                    //                     }
-                                    //                 })
-                                    //
 
 
                                 })
@@ -588,7 +525,105 @@ export default function AdminService(){
                             })
                     }
                 }
-                if(types === 'delete'){
+                if(types === 'selectDelete'){
+                    Company.findOne({company:data.company})
+                        .then(allData =>{
+                            User.find({company:data.company})
+                                .then(userData=>{
+                                    let changeData = allData.organizations.filter((items)=>data.delPoint.some((e)=> e.department === items.department))
+                                    let basicData = allData.organizations.filter(x=>!changeData.includes(x))
+                                    let delData = data.delPoint
+                                    let filterData = []
+
+                                    delData.map(item=>{
+                                        if(filterData.length === 0){
+                                            let index = changeData.findIndex(x=>x.department === item.department)
+                                            // let positionIndex = changeData[index].position.findIndex(x=>x.name === item.position)
+                                            let filter = changeData
+                                            for(let i =0; i < filter[index].position.length; i++){
+                                                if(filter[index].position[i].name === item.position ){
+                                                    filter[index].position.splice(i,1)
+                                                }
+                                            }
+                                            filterData.push(filter)
+                                        }else{
+                                            let index = filterData[0].findIndex(x=>x.department === item.department)
+                                            let filter = filterData[0]
+                                            for(let i =0; i < filter[index].position.length; i++){
+                                                if(filter[index].position[i].name === item.position ){
+                                                    filter[index].position.splice(i,1)
+                                                }
+                                            }
+                                            filterData[index] = filter
+                                        }
+                                    })
+                                    let setData = {organizations:[...filterData[0],...basicData]}
+                                    let delDepartment = []
+                                    setData.organizations.map(e=>{
+                                        if(e.position.length === 0){
+                                            let filter = filterData[0].filter(x=>x.department !== e.department)
+                                            setData = {organizations:[...filter,...basicData]}
+                                            delDepartment.push(e.department)
+                                        }
+                                    })
+                                    let changeUser = []
+
+                                    userData.map(e => {
+                                        data.delPoint.map(item => {
+                                            if (item.department === e.affiliation.department) {
+                                                if (item.position === e.affiliation.position) {
+                                                    changeUser.push(e)
+                                                }
+                                            }
+                                        })
+                                    })
+                                    if(changeUser.length !== 0){
+                                        res.status(200).json({msg:`요청하신 ${data.delPoint.map(e=>e.department)} 부서에 등록 되어있는 직원들이 있어 부서변경 및 포지션 변경 후 데이터 삭제가 적용됩니다.`,
+                                        companyData:setData,userData:changeUser})
+                                    }else{
+                                        Company.findOneAndUpdate({company:data.company},{$set:setData})
+                                            .then(suc=>{
+                                                Company.findOne({company:data.company})
+                                                    .then(companyData=>{
+                                                            if(delDepartment.length === 0){
+                                                                res.status(200).json({msg:`요청하신 ${data.delPoint.map(e=>e.department)} 부서의 포지션들이 삭제 되었습니다.`,
+                                                                    companyData:companyData,userData:'None'})
+                                                            }else{
+                                                                res.status(200).json({msg:`요청하신 ${data.delPoint.map(e=>e.department)} 부서의 포지션들이 삭제되고 ${delDepartment} 부서의 데이터는 전체 삭제 되었습니다.`,
+                                                                    companyData:companyData,userData:'None'})
+                                                            }
+                                                    })
+                                                    .catch(err=>{
+                                                        res.status(400).send(err)
+                                                    })
+                                            })
+                                            .catch(err=>{
+                                                res.status(400).send(err)
+                                            })
+                                    }
+
+
+                                })
+
+
+
+                            // if(data.delPoint.findIndex(x=>x.department === data.userData.affiliation.department) !== -1  && data.delPoint.findIndex(x=>x.position === data.userData.affiliation.position) !== -1){
+                            //     let companyData = {
+                            //         setData:setData,
+                            //         delDepartment:delDepartment
+                            //     }
+                            //     res.status(200).json({msg:`관리자 부서의 포지션이 삭제되어 부서 이동 및 포지션 지정 후 데이터 삭제가 적용됩니다.`
+                            //         ,companyData:companyData,userData:'ChangeUserData'})
+                            // }else{
+                            //
+                            // }
+
+
+                        })
+
+                }
+
+                if(types === 'departmentDelete'){
 
                 }
             }

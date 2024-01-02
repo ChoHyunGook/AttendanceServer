@@ -12,6 +12,7 @@ import User from './app/routes/user/User.js'
 import Send from './app/routes/send/Send.js'
 import Data from './app/routes/data/Data.js'
 import Admin from "./app/routes/admin/Admin.js";
+import Attendance from "./app/routes/data/Attendance.js";
 
 
 async function startServer(){
@@ -47,6 +48,7 @@ async function startServer(){
     app.use('/send',Send)
     app.use('/data',Data)
     app.use('/admin',Admin)
+    app.use('/attendance',Attendance)
 
 
     app.use(morgan('dev'))
