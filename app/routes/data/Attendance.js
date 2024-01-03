@@ -32,6 +32,10 @@ app.post('/refine/processing/getData',cors(corsOptions),(req,res)=>{
     AttendanceService().refineAndGetData(req,res)
 })
 
+app.get('/getHoliday',cors(corsOptions),(req,res)=>{
+    AttendanceService().getHoliday(req,res)
+})
+
 
 
 

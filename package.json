@@ -9,6 +9,7 @@
     "crypto-js": "^4.1.1",
     "dotenv": "^16.0.3",
     "express": "^4.18.2",
+    "holidays-kr": "^1.1.5",
     "jsonwebtoken": "^9.0.0",
     "moment-timezone": "^0.5.43",
     "mongoose": "^6.8.3",
