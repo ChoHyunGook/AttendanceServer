@@ -60,16 +60,32 @@ export default function AttendanceService(){
                 .then(user=>{
                     let tzData = moment().tz('Asia/Seoul')
                     let now = tzData.format('YYYY-MM-DD')
+                    let days = tzData.days()
+                    const weekStartData = tzData.subtract(days, 'days');
 
                     Device.find({userId:userData.info.userId}).sort({'date':-1}).sort({'time':-1})
                         .then(deviceAllData=>{
                             let monthData = []
+                            let weekData = []
                             let latestData = []
                             let latestDate = []
                             let count = 0;
                             let monthCount =0;
+                            let weekCount =0;
                             let log = []
-                            let check = []
+                            const day = new Date();
+                            const sunday = day.getTime() - 86400000 * day.getDay();
+
+                            day.setTime(sunday);
+
+                            const column = ['일요일','월요일','화요일','수요일','목요일','금요일','토요일']
+                            const weeks = [{column:column[0],date:day.toISOString().slice(0, 10)}];
+
+                            for (let i = 1; i < 7; i++) {
+                                day.setTime(day.getTime() + 86400000);
+                                weeks.push({column:column[i],date:day.toISOString().slice(0, 10)});
+                            }
+
 
 
                             deviceAllData.map(e=>{
@@ -88,8 +104,7 @@ export default function AttendanceService(){
                                         }
                                     })
                                 }
-
-
+                                // 월별 데이터
                                 if(monthData.length === 0){
                                     let pushData = {
                                         _id:e._id,
@@ -141,12 +156,83 @@ export default function AttendanceService(){
                                     }
                                 }
 
+                                //주간데이터
+
+                                const findWeeksCheck = weeks.find((el)=>el.date === e.date)
+
+                                if(findWeeksCheck !== undefined){
+                                    if(weekData.length === 0){
+                                        let pushData = {
+                                            _id:e._id,
+                                            userId:e.userId,
+                                            date:e.date,
+                                            time:e.time,
+                                            state:'end'
+                                        }
+                                        weekData.push(pushData)
+                                        weekCount = 1
+                                    }else{
+                                        if(e.date === weekData.slice(-1)[0].date){
+                                            if(weekCount === 1){
+                                                let pushData = {
+                                                    _id:e._id,
+                                                    userId:e.userId,
+                                                    date:e.date,
+                                                    time:e.time,
+                                                    state:'start'
+                                                }
+                                                weekData.push(pushData)
+                                                weekCount = 2
+                                            }else{
+                                                if(weekCount === 2){
+                                                    let pushData = {
+                                                        _id:e._id,
+                                                        userId:e.userId,
+                                                        date:e.date,
+                                                        time:e.time,
+                                                        state:'start'
+                                                    }
+                                                    weekData[weekData.length -1] = pushData
+                                                }
+                                            }
+
+                                        }else{
+                                            if(weekData.length === 1){
+                                                weekData[0].state = 'start'
+                                            }
+                                            let pushData = {
+                                                _id:e._id,
+                                                userId:e.userId,
+                                                date:e.date,
+                                                time:e.time,
+                                                state:'end'
+                                            }
+                                            weekData.push(pushData)
+                                            weekCount = 1
+                                        }
+                                    }
+                                }
+
                                 //로그 25개
                                 count += 1
                                 if(count <= 25){
                                     log.push(e)
                                 }
                             })
+
+                            weeks.map(e=>{
+                                weekData.map(el=>{
+                                    if(e.date === el.date){
+                                        let index = weeks.findIndex(obj=>obj.date == el.date)
+                                        if(el.state === 'start'){
+                                            weeks[index].start = el.time
+                                        }else{
+                                            weeks[index].end = el.time
+                                        }
+                                    }
+                                })
+                            })
+
 
 
                             let sendLatestData = {
@@ -167,6 +253,7 @@ export default function AttendanceService(){
                             let sendData = {
                                 latestData:sendLatestData,
                                 monthData:monthData,
+                                weekData:weeks,
                                 basicData:userWorkData,
                                 state: {
                                     start: userWorkData.start.split(':').join('') < sendLatestData.start.time.split(':').join('') ? 'tardiness':'normal',
