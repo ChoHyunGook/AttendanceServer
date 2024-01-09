@@ -4,6 +4,7 @@ import UserModel from "./User.js";
 import AttendanceModel from "./Attendance.js";
 import CompanyInfoModel from './Company.js'
 import DeviceModel from './Device.js'
+import HolidayModel from './Holiday.js'
 
 
 
@@ -15,6 +16,7 @@ db.User=new UserModel(mongoose)
 db.Attendance=new AttendanceModel(mongoose)
 db.Company=new CompanyInfoModel(mongoose)
 db.Device = new DeviceModel(mongoose)
+db.Holiday = new HolidayModel(mongoose)
 
 
 
