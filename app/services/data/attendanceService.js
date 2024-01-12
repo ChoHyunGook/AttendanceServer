@@ -15,6 +15,7 @@ export default function AttendanceService(){
     const Company = db.Company
     const Device = db.Device
     const Holiday = db.Holiday
+    const Vacation = db.Vacation
 
     return{
 
@@ -83,141 +84,49 @@ export default function AttendanceService(){
                         .then(deviceAllData=>{
                             Holiday.find({}).sort({"year":-1})
                                 .then(findAllData=>{
-                                    let monthData = []
-                                    let weekData = []
-                                    let latestData = []
-                                    let latestDate = []
-                                    let count = 0;
-                                    let monthCount =0;
-                                    let weekCount =0;
-                                    let log = []
-                                    const day = new Date();
-                                    const sunday = day.getTime() - 86400000 * day.getDay();
+                                    Vacation.find({company:data.company,userId:userData.info.userId}).sort({'date':-1})
+                                        .then(vacationAllData=>{
+                                            let monthData = []
+                                            let weekData = []
+                                            let latestData = []
+                                            let latestDate = []
+                                            let count = 0;
+                                            let monthCount =0;
+                                            let weekCount =0;
+                                            let log = []
+                                            const day = new Date();
+                                            const sunday = day.getTime() - 86400000 * day.getDay();
 
-                                    day.setTime(sunday);
+                                            day.setTime(sunday);
 
-                                    const column = ['일요일','월요일','화요일','수요일','목요일','금요일','토요일']
-                                    const weeks = [{column:column[0],date:day.toISOString().slice(0, 10)}];
+                                            const column = ['일요일','월요일','화요일','수요일','목요일','금요일','토요일']
+                                            const weeks = [{column:column[0],date:day.toISOString().slice(0, 10)}];
 
-                                    for (let i = 1; i < 7; i++) {
-                                        day.setTime(day.getTime() + 86400000);
-                                        weeks.push({column:column[i],date:day.toISOString().slice(0, 10)});
-                                    }
-
-
-
-                                    deviceAllData.map(e=>{
-                                        //최신날짜 데이터
-                                        if(latestData.length === 0){
-                                            latestData.push(e)
-                                            latestDate.push(e.time)
-                                        }else{
-                                            latestData.map(item=>{
-                                                if(item.date.split('-').join('') <= e.date.split('-').join('')){
-                                                    const findCheck = latestData.find((el)=>el._id === e._id)
-                                                    if(findCheck === undefined){
-                                                        latestData.push(e)
-                                                        latestDate.push(e.time)
-                                                    }
-                                                }
-                                            })
-                                        }
-                                        // 월별 데이터
-                                        if(monthData.length === 0){
-                                            let pushData = {
-                                                _id:e._id,
-                                                userId:e.userId,
-                                                date:e.date,
-                                                time:e.time,
-                                                state:'end'
+                                            for (let i = 1; i < 7; i++) {
+                                                day.setTime(day.getTime() + 86400000);
+                                                weeks.push({column:column[i],date:day.toISOString().slice(0, 10)});
                                             }
-                                            monthData.push(pushData)
-                                            monthCount = 1
-                                        }else{
-                                            if(e.date === monthData.slice(-1)[0].date){
-                                                if(monthCount === 1){
-                                                    let pushData = {
-                                                        _id:e._id,
-                                                        userId:e.userId,
-                                                        date:e.date,
-                                                        time:e.time,
-                                                        state:'start'
-                                                    }
-                                                    monthData.push(pushData)
-                                                    monthCount = 2
+
+
+
+                                            deviceAllData.map(e=>{
+                                                //최신날짜 데이터
+                                                if(latestData.length === 0){
+                                                    latestData.push(e)
+                                                    latestDate.push(e.time)
                                                 }else{
-                                                    if(monthCount === 2){
-                                                        let pushData = {
-                                                            _id:e._id,
-                                                            userId:e.userId,
-                                                            date:e.date,
-                                                            time:e.time,
-                                                            state:'start'
-                                                        }
-                                                        monthData[monthData.length -1] = pushData
-                                                    }
-                                                }
-
-                                            }else{
-                                                if(monthData.length === 1){
-                                                    monthData[0].state = 'start'
-                                                }
-                                                let pushData = {
-                                                    _id:e._id,
-                                                    userId:e.userId,
-                                                    date:e.date,
-                                                    time:e.time,
-                                                    state:'end'
-                                                }
-                                                monthData.push(pushData)
-                                                monthCount = 1
-                                            }
-                                        }
-
-                                        //주간데이터
-
-                                        const findWeeksCheck = weeks.find((el)=>el.date === e.date)
-
-                                        if(findWeeksCheck !== undefined){
-                                            if(weekData.length === 0){
-                                                let pushData = {
-                                                    _id:e._id,
-                                                    userId:e.userId,
-                                                    date:e.date,
-                                                    time:e.time,
-                                                    state:'end'
-                                                }
-                                                weekData.push(pushData)
-                                                weekCount = 1
-                                            }else{
-                                                if(e.date === weekData.slice(-1)[0].date){
-                                                    if(weekCount === 1){
-                                                        let pushData = {
-                                                            _id:e._id,
-                                                            userId:e.userId,
-                                                            date:e.date,
-                                                            time:e.time,
-                                                            state:'start'
-                                                        }
-                                                        weekData.push(pushData)
-                                                        weekCount = 2
-                                                    }else{
-                                                        if(weekCount === 2){
-                                                            let pushData = {
-                                                                _id:e._id,
-                                                                userId:e.userId,
-                                                                date:e.date,
-                                                                time:e.time,
-                                                                state:'start'
+                                                    latestData.map(item=>{
+                                                        if(item.date.split('-').join('') <= e.date.split('-').join('')){
+                                                            const findCheck = latestData.find((el)=>el._id === e._id)
+                                                            if(findCheck === undefined){
+                                                                latestData.push(e)
+                                                                latestDate.push(e.time)
                                                             }
-                                                            weekData[weekData.length -1] = pushData
                                                         }
-                                                    }
-
-                                                }else{
-                                                    if(weekData.length === 1){
-                                                        weekData[0].state = 'start'
-                                                    }
+                                                    })
+                                                }
+                                                // 월별 데이터
+                                                if(monthData.length === 0){
                                                     let pushData = {
                                                         _id:e._id,
                                                         userId:e.userId,
@@ -225,103 +134,242 @@ export default function AttendanceService(){
                                                         time:e.time,
                                                         state:'end'
                                                     }
-                                                    weekData.push(pushData)
-                                                    weekCount = 1
-                                                }
-                                            }
-                                        }
-
-                                        //로그 25개
-                                        count += 1
-                                        if(count <= 25){
-                                            log.push(e)
-                                        }
-                                    })
-
-                                    weeks.map(e=>{
-                                        weekData.map(el=>{
-                                            if(e.date === el.date){
-                                                let index = weeks.findIndex(obj=>obj.date == el.date)
-                                                if(el.state === 'start'){
-                                                    weeks[index].start = el.time
+                                                    monthData.push(pushData)
+                                                    monthCount = 1
                                                 }else{
-                                                    weeks[index].end = el.time
+                                                    if(e.date === monthData.slice(-1)[0].date){
+                                                        if(monthCount === 1){
+                                                            let pushData = {
+                                                                _id:e._id,
+                                                                userId:e.userId,
+                                                                date:e.date,
+                                                                time:e.time,
+                                                                state:'start'
+                                                            }
+                                                            monthData.push(pushData)
+                                                            monthCount = 2
+                                                        }else{
+                                                            if(monthCount === 2){
+                                                                let pushData = {
+                                                                    _id:e._id,
+                                                                    userId:e.userId,
+                                                                    date:e.date,
+                                                                    time:e.time,
+                                                                    state:'start'
+                                                                }
+                                                                monthData[monthData.length -1] = pushData
+                                                            }
+                                                        }
+
+                                                    }else{
+                                                        if(monthData.length === 1){
+                                                            monthData[0].state = 'start'
+                                                        }
+                                                        let pushData = {
+                                                            _id:e._id,
+                                                            userId:e.userId,
+                                                            date:e.date,
+                                                            time:e.time,
+                                                            state:'end'
+                                                        }
+                                                        monthData.push(pushData)
+                                                        monthCount = 1
+                                                    }
                                                 }
-                                            }
-                                        })
-                                    })
 
-                                    //공휴일 정제
+                                                //주간데이터
 
-                                    let sendHolidayData = []
+                                                const findWeeksCheck = weeks.find((el)=>el.date === e.date)
 
-                                    findAllData.map(e=>{
-                                        e.data.map(el=>{
-                                            if(el.name === '기독탄신일'){
-                                                let pushData = {
-                                                    date:el.date,
-                                                    isHoliday:el.isHoliday,
-                                                    title:"크리스마스"
+                                                if(findWeeksCheck !== undefined){
+                                                    if(weekData.length === 0){
+                                                        let pushData = {
+                                                            _id:e._id,
+                                                            userId:e.userId,
+                                                            date:e.date,
+                                                            time:e.time,
+                                                            state:'end'
+                                                        }
+                                                        weekData.push(pushData)
+                                                        weekCount = 1
+                                                    }else{
+                                                        if(e.date === weekData.slice(-1)[0].date){
+                                                            if(weekCount === 1){
+                                                                let pushData = {
+                                                                    _id:e._id,
+                                                                    userId:e.userId,
+                                                                    date:e.date,
+                                                                    time:e.time,
+                                                                    state:'start'
+                                                                }
+                                                                weekData.push(pushData)
+                                                                weekCount = 2
+                                                            }else{
+                                                                if(weekCount === 2){
+                                                                    let pushData = {
+                                                                        _id:e._id,
+                                                                        userId:e.userId,
+                                                                        date:e.date,
+                                                                        time:e.time,
+                                                                        state:'start'
+                                                                    }
+                                                                    weekData[weekData.length -1] = pushData
+                                                                }
+                                                            }
+
+                                                        }else{
+                                                            if(weekData.length === 1){
+                                                                weekData[0].state = 'start'
+                                                            }
+                                                            let pushData = {
+                                                                _id:e._id,
+                                                                userId:e.userId,
+                                                                date:e.date,
+                                                                time:e.time,
+                                                                state:'end'
+                                                            }
+                                                            weekData.push(pushData)
+                                                            weekCount = 1
+                                                        }
+                                                    }
                                                 }
-                                                sendHolidayData.push(pushData)
-                                            }else{
-                                                if(el.name === '1월1일'){
+
+                                                //로그 25개
+                                                count += 1
+                                                if(count <= 25){
+                                                    log.push(e)
+                                                }
+                                            })
+
+                                            weeks.map(e=>{
+                                                weekData.map(el=>{
+                                                    if(e.date === el.date){
+                                                        let index = weeks.findIndex(obj=>obj.date == el.date)
+                                                        if(el.state === 'start'){
+                                                            weeks[index].start = el.time
+                                                        }else{
+                                                            weeks[index].end = el.time
+                                                        }
+                                                    }
+                                                })
+                                            })
+
+                                            //공휴일 정제 & 휴가 정제
+
+                                            let sendHolidayData = []
+
+                                            findAllData.map(e=>{
+                                                e.data.map(el=>{
+                                                    if(el.name === '기독탄신일'){
+                                                        let pushData = {
+                                                            date:el.date,
+                                                            isHoliday:el.isHoliday,
+                                                            title:"크리스마스"
+                                                        }
+                                                        sendHolidayData.push(pushData)
+                                                    }else{
+                                                        if(el.name === '1월1일'){
+                                                            let pushData = {
+                                                                date:el.date,
+                                                                isHoliday:el.isHoliday,
+                                                                title:"신정"
+                                                            }
+                                                            sendHolidayData.push(pushData)
+                                                        }else{
+                                                            let pushData = {
+                                                                date:el.date,
+                                                                isHoliday:el.isHoliday,
+                                                                title:el.name
+                                                            }
+                                                            sendHolidayData.push(pushData)
+                                                        }
+                                                    }
+
+                                                })
+                                            })
+
+                                            vacationAllData.map(e=>{
+                                                if(e.type === 'year'){
                                                     let pushData = {
-                                                        date:el.date,
-                                                        isHoliday:el.isHoliday,
-                                                        title:"신정"
+                                                        date:e.date,
+                                                        isHoliday:true,
+                                                        title:'연차'
                                                     }
                                                     sendHolidayData.push(pushData)
-                                                }else{
+                                                }
+                                                if(e.type === 'month'){
                                                     let pushData = {
-                                                        date:el.date,
-                                                        isHoliday:el.isHoliday,
-                                                        title:el.name
+                                                        date:e.date,
+                                                        isHoliday:true,
+                                                        title:'월차'
                                                     }
                                                     sendHolidayData.push(pushData)
                                                 }
+                                                if(e.type === 'family'){
+                                                    let pushData = {
+                                                        date:e.date,
+                                                        isHoliday:true,
+                                                        title:'경조사'
+                                                    }
+                                                    sendHolidayData.push(pushData)
+                                                }
+                                                if(e.type === 'maternity'){
+                                                    let pushData = {
+                                                        date:e.date,
+                                                        isHoliday:true,
+                                                        title:'육아휴직'
+                                                    }
+                                                    sendHolidayData.push(pushData)
+                                                }
+                                                if(e.type === 'homeWork'){
+                                                    let pushData = {
+                                                        date:e.date,
+                                                        isHoliday:false,
+                                                        title:'재택근무'
+                                                    }
+                                                    sendHolidayData.push(pushData)
+                                                }
+
+                                            })
+
+
+
+                                            let sendLatestData = {
+                                                start:latestData.find((el)=>el.time === latestDate.reduce((a,b)=>{
+                                                    return new Date(a).getTime() <= new Date(b).getTime() ? a:b
+                                                })),
+                                                end:latestData.find((el)=>el.time === latestDate.reduce((a,b)=>{
+                                                    return new Date(a).getTime() <= new Date(b).getTime() ? b:a
+                                                }))
                                             }
 
+
+                                            let userWorkData = {
+                                                start:user.etc.workTime.split('-')[0]+':00',
+                                                end:user.etc.workTime.split('-')[1]+':00'
+                                            }
+
+                                            let sendData = {
+                                                latestData:sendLatestData,
+                                                monthData:monthData,
+                                                basicData:userWorkData,
+                                                holidays:sendHolidayData,
+                                                state: {
+                                                    start: userWorkData.start.split(':').join('') < sendLatestData.start.time.split(':').join('') ? 'tardiness':'normal',
+                                                    end: userWorkData.end.split(':').join('') > sendLatestData.end.time.split(':').join('')
+                                                        ? sendLatestData.start.time === sendLatestData.end.time ? 'onDuty' : 'abNormal' : 'normal'
+                                                },
+                                                break:{
+                                                    yearBreak:user.break.year,
+                                                    monthBreak: user.break.month,
+                                                    familyBreak: user.break.special.family,
+                                                    maternityBreak: user.break.special.maternity,
+                                                },
+                                                log:log
+                                            }
+
+                                            res.status(200).send(sendData)
                                         })
-                                    })
-
-
-
-                                    let sendLatestData = {
-                                        start:latestData.find((el)=>el.time === latestDate.reduce((a,b)=>{
-                                            return new Date(a).getTime() <= new Date(b).getTime() ? a:b
-                                        })),
-                                        end:latestData.find((el)=>el.time === latestDate.reduce((a,b)=>{
-                                            return new Date(a).getTime() <= new Date(b).getTime() ? b:a
-                                        }))
-                                    }
-
-
-                                    let userWorkData = {
-                                        start:user.etc.workTime.split('-')[0]+':00',
-                                        end:user.etc.workTime.split('-')[1]+':00'
-                                    }
-
-                                    let sendData = {
-                                        latestData:sendLatestData,
-                                        monthData:monthData,
-                                        basicData:userWorkData,
-                                        holidays:sendHolidayData,
-                                        state: {
-                                            start: userWorkData.start.split(':').join('') < sendLatestData.start.time.split(':').join('') ? 'tardiness':'normal',
-                                            end: userWorkData.end.split(':').join('') > sendLatestData.end.time.split(':').join('')
-                                                ? sendLatestData.start.time === sendLatestData.end.time ? 'onDuty' : 'abNormal' : 'normal'
-                                        },
-                                        break:{
-                                            yearBreak:user.break.year,
-                                            monthBreak: user.break.month,
-                                            familyBreak: user.break.special.family,
-                                            maternityBreak: user.break.special.maternity,
-                                        },
-                                        log:log
-                                    }
-
-                                    res.status(200).send(sendData)
 
                                 })
 
@@ -334,6 +382,154 @@ export default function AttendanceService(){
                     res.status(400).send(err)
                 })
         },
+
+
+        vacationService(req,res){
+            const data = req.body
+            const params = req.query.service
+            console.log(data)
+            console.log(params)
+            if(params === 'signUp'){
+                let error = false
+                let duplicate = []
+                Vacation.find({company: data.company, userId: data.loginData.info.userId})
+                    .then(allData=>{
+                            data.breakDate.map(e=>{
+                                allData.map(item=>{
+                                    if(item.date === e){
+                                        duplicate.push(item)
+                                    }
+                                })
+                            })
+                        if(duplicate.length === 0 ){
+                            data.breakDate.map(e=>{
+                                let pushData = {
+                                    company:data.company,
+                                    userId:data.loginData.info.userId,
+                                    type:data.type,
+                                    date:e
+                                }
+
+                                new Vacation(pushData).save((err)=>{
+                                    if(err){
+                                        console.log(err)
+                                        error = true
+                                    }else{
+                                        console.log(`${data.company} ${data.loginData.info.userId} Vacation Type : ${data.type} date : ${e} update Success`)
+                                    }
+                                })
+                            })
+                            User.findOne({company:data.company,userId:data.loginData.info.userId})
+                                .then(user=>{
+                                    let changeData;
+                                    if(data.type === 'year'){
+                                        changeData = {
+                                            company: user.company,
+                                            affiliation:user.affiliation,
+                                            name:user.name,
+                                            userId: user.userId,
+                                            phone: user.phone,
+                                            break:{
+                                                year:data.breakCount,
+                                                month:user.break.month,
+                                                special:user.break.special
+                                            },
+                                            form:user.form,
+                                            etc:user.etc,
+                                        }
+                                    }
+                                    if(data.type === 'month'){
+                                        changeData = {
+                                            company: user.company,
+                                            affiliation:user.affiliation,
+                                            name:user.name,
+                                            userId: user.userId,
+                                            phone: user.phone,
+                                            break:{
+                                                year:user.break.year,
+                                                month:data.breakCount,
+                                                special:user.break.special
+                                            },
+                                            form:user.form,
+                                            etc:user.etc,
+                                        }
+                                    }
+                                    if(data.type === 'family'){
+                                        changeData = {
+                                            company: user.company,
+                                            affiliation:user.affiliation,
+                                            name:user.name,
+                                            userId: user.userId,
+                                            phone: user.phone,
+                                            break:{
+                                                year:user.break.year,
+                                                month:user.break.month,
+                                                special: {
+                                                    family:data.breakCount,
+                                                    maternity:user.break.special.maternity
+                                                }
+                                            },
+                                            form:user.form,
+                                            etc:user.etc,
+                                        }
+                                    }
+                                    if(data.type === 'maternity'){
+                                        changeData = {
+                                            company: user.company,
+                                            affiliation:user.affiliation,
+                                            name:user.name,
+                                            userId: user.userId,
+                                            phone: user.phone,
+                                            break:{
+                                                year:user.break.year,
+                                                month:user.break.month,
+                                                special: {
+                                                    family:user.break.special.family,
+                                                    maternity:data.breakCount
+                                                }
+                                            },
+                                            form:user.form,
+                                            etc:user.etc,
+                                        }
+                                    }
+
+                                    User.findOneAndUpdate({company:data.company,userId:data.loginData.info.userId},{$set:changeData})
+                                        .then(users=>{
+                                            User.findOne({company:data.company,userId:data.loginData.info.userId})
+                                                .then(userData=>{
+                                                    let sendData = {
+                                                        company: userData.company,
+                                                        affiliation:userData.affiliation,
+                                                        info:{name:userData.name,userId: userData.userId,
+                                                            phone: userData.phone},
+                                                        break:userData.break,
+                                                        form:userData.form,
+                                                        etc:userData.etc,
+                                                        expiresDate:data.loginData.expiresDate
+                                                    }
+                                                    res.status(200).json({msg:'휴가신청 완료', userData:sendData})
+                                                })
+                                        })
+                                        .catch(err=>{
+                                            res.status(400).send(err)
+                                        })
+
+                                })
+
+
+
+
+
+                        }else{
+                            res.status(402).send(`날짜 : ${duplicate.map(e=>e.date)}가 이미 휴가로 지정되어 있습니다. 다시 한번 확인해주세요.`)
+                        }
+                    })
+                    .catch(err=>{
+                        res.status(400).send(err)
+                    })
+            }
+        },
+
 
 
     }

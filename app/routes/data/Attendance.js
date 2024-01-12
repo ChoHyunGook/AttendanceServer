@@ -36,6 +36,9 @@ app.get('/getHoliday',cors(corsOptions),(req,res)=>{
     AttendanceService().getHoliday(req,res)
 })
 
+app.post('/vacation/service',cors(corsOptions),(req,res)=>{
+    AttendanceService().vacationService(req,res)
+})
 
 
 
