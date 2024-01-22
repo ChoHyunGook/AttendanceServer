@@ -50,6 +50,13 @@ app.post('/addLoginTimes',cors(corsOptions),(req,res)=>{
     UserService().addLoginTime(req,res)
 })
 
+app.post('/update',cors(corsOptions),(req,res)=>{
+    UserService().update(req,res)
+})
+app.post('/delUser',cors(corsOptions),(req,res)=>{
+    UserService().delUser(req,res)
+})
+
 
 
 export default app

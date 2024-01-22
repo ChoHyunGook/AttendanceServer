@@ -86,21 +86,7 @@ export default function UserService(){
                     User.findOne({phone: req.body.phone}, function (err, user) {
                         if (err) throw err
                         if (!user) {
-                            let saveData = {
-                                company: data.company,
-                                department: data.department,
-                                position: data.position,
-                                name: data.name,
-                                birth: data.birth,
-                                userId: data.userId,
-                                password: data.password,
-                                phone: data.phone,
-                                workTime: null,
-                                joinDate: null,
-                                lunchTime: null
-                            }
-
-                            new User(saveData).save((err) => {
+                            new User(data).save((err) => {
                                 if (err) {
                                     res.status(500).send(err)
                                 } else {
@@ -223,9 +209,6 @@ export default function UserService(){
                                       })
                               }
 
-
-
-
                           }catch (err){
                               res.status(400).send(err)
                           }
@@ -234,6 +217,91 @@ export default function UserService(){
               }
           })
 
+        },
+
+        update(req,res){
+            const data = req.body
+            const params = req.query.plane
+
+            User.findOne({userId:data.userId})
+                .then(findData=>{
+                    User.find({phone:data.phone})
+                        .then(dupData=>{
+                            const duplicateData = dupData[0]
+
+                            if(duplicateData.userId === data.userId || dupData.length === 0){
+                                let saveData
+                                if(params === 'true'){
+                                    saveData = {...data,password:findData.password
+                                    }
+                                }else{
+                                    const pwData = data.password
+                                    const bcryptPwData = bcrypt.hashSync(pwData, 10)
+                                    saveData = {...data,password:bcryptPwData
+                                    }
+                                }
+
+                                User.findOneAndUpdate({userId:data.userId},{$set:saveData})
+                                    .then(suc=>{
+                                        const tokenData = req.cookies.accessToken
+                                        const verify = jwt.verify(tokenData, access_jwt_secret)
+                                        if(verify.userId === data.userId){
+                                            User.findOne({userId:data.userId})
+                                                .then(user=>{
+                                                    const accessToken = jwt.sign({
+                                                        company: user.company,
+                                                        department: user.affiliation.department,
+                                                        position: user.affiliation.position,
+                                                        name: user.name,
+                                                        userId: user.userId,
+                                                        phone: user.phone,
+                                                        expiresDate:verify.expiresDate
+                                                    },access_jwt_secret,{expiresIn:'1h'})
+
+                                                    res.cookie('accessToken',accessToken,{
+                                                        secure: false,
+                                                        httpOnly: true
+                                                    })
+                                                    let sendData = {
+                                                        company: user.company,
+                                                        affiliation:user.affiliation,
+                                                        info:{name:user.name,userId: user.userId,
+                                                            phone: user.phone},
+                                                        break:user.break,
+                                                        form:user.form,
+                                                        etc:user.etc,
+                                                        expiresDate:verify.expiresDate
+                                                    }
+                                                    res.status(200).json({msg:`${user.name}의 정보가 변경되었습니다.`,data:sendData})
+                                                })
+                                        }else{
+                                            res.status(200).json({msg:`${data.name}의 정보가 변경되었습니다.`,data:'None'})
+                                        }
+                                    })
+                            }else{
+                                res.status(400).send('이미 사용중인 전화번호 입니다.')
+                            }
+                        })
+                })
+                .catch(err=>{
+                    res.status(400).send(err)
+                })
+
+
+
+        },
+        delUser(req,res){
+            const data = req.body
+            let idMap = data.map(e => e.userId)
+            let nameMap = data.map(e=>e.name)
+            let phoneMap = data.map(e=>e.phone)
+            User.deleteMany({userId: idMap, name: nameMap, phone: phoneMap}, function (err) {
+                if (err) {
+                    res.status(400).send(err)
+                } else {
+                    res.status(200).send(`${nameMap} 의 계정이 삭제 되었습니다. 감사합니다.`)
+                }
+            })
         },
 
         logout(req,res){
