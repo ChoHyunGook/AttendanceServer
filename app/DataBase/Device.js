@@ -1,5 +1,4 @@
 
-
 export default function Device(mongoose){
     const deviceSchema = new mongoose.Schema({
         userId:{type:String},
@@ -8,3 +7,4 @@ export default function Device(mongoose){
     },{versionKey : false})
     return mongoose.model('Device',deviceSchema)
 }
+
