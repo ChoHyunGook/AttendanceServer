@@ -30,7 +30,7 @@ async function startServer(){
 
     app.use(cookieParser())
 
-    //DB 연결 확인d
+    //DB 연결 확인klk
     db.mongoose.set('strictQuery', false);
     db
         .mongoose
