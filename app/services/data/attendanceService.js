@@ -477,7 +477,7 @@ export default function AttendanceService(){
                                                                             types.push('육아휴직')
                                                                         }
                                                                     })
-                                                                    SendService().VacationSMS('휴가취소',userData.company,userData.name,dateMap,[...new Set(types)],'취소')
+                                                                    //SendService().VacationSMS('휴가취소',userData.company,userData.name,dateMap,[...new Set(types)],'취소')
                                                                     res.status(200).json({vacation:finalData,userData:userPushData})
                                                                 })
 
@@ -721,7 +721,7 @@ export default function AttendanceService(){
                                                     if(data.type === 'maternity'){
                                                         typePoint = '육아휴직'
                                                     }
-                                                    SendService().VacationSMS('휴가신청',userData.company,userData.name,data.breakDate,typePoint,'신청')
+                                                   // SendService().VacationSMS('휴가신청',userData.company,userData.name,data.breakDate,typePoint,'신청')
 
                                                     res.status(200).json({msg:'휴가신청 완료', userData:sendData})
                                                 })
