@@ -4,6 +4,8 @@ import db from "../../DataBase/index.js";
 import moment from "moment-timezone";
 import send from "../../routes/send/Send.js";
 import axios from "axios";
+import {query} from "express";
+import SendService from "../send/sendService.js";
 
 
 
@@ -349,26 +351,48 @@ export default function AttendanceService(){
                                                 end:user.etc.workTime.split('-')[1]+':00'
                                             }
 
-                                            let sendData = {
-                                                latestData:sendLatestData,
-                                                monthData:monthData,
-                                                basicData:userWorkData,
-                                                holidays:sendHolidayData,
-                                                state: {
-                                                    start: userWorkData.start.split(':').join('') < sendLatestData.start.time.split(':').join('') ? 'tardiness':'normal',
-                                                    end: userWorkData.end.split(':').join('') > sendLatestData.end.time.split(':').join('')
-                                                        ? sendLatestData.start.time === sendLatestData.end.time ? 'onDuty' : 'abNormal' : 'normal'
-                                                },
-                                                break:{
-                                                    yearBreak:user.break.year,
-                                                    monthBreak: user.break.month,
-                                                    familyBreak: user.break.special.family,
-                                                    maternityBreak: user.break.special.maternity,
-                                                },
-                                                log:log
+                                            if(sendLatestData.start === undefined){
+                                                let sendData = {
+                                                    latestData:sendLatestData,
+                                                    monthData:monthData,
+                                                    basicData:userWorkData,
+                                                    holidays:sendHolidayData,
+                                                    state: {
+                                                        start: null,
+                                                        end: null
+                                                    },
+                                                    break:{
+                                                        yearBreak:user.break.year,
+                                                        monthBreak: user.break.month,
+                                                        familyBreak: user.break.special.family,
+                                                        maternityBreak: user.break.special.maternity,
+                                                    },
+                                                    log:log
+                                                }
+
+                                                res.status(200).send(sendData)
+                                            }else{
+                                                let sendData = {
+                                                    latestData:sendLatestData,
+                                                    monthData:monthData,
+                                                    basicData:userWorkData,
+                                                    holidays:sendHolidayData,
+                                                    state: {
+                                                        start: 'normal',
+                                                        end: 'normal'
+                                                    },
+                                                    break:{
+                                                        yearBreak:user.break.year,
+                                                        monthBreak: user.break.month,
+                                                        familyBreak: user.break.special.family,
+                                                        maternityBreak: user.break.special.maternity,
+                                                    },
+                                                    log:log
+                                                }
+
+                                                res.status(200).send(sendData)
                                             }
 
-                                            res.status(200).send(sendData)
                                         })
 
                                 })
@@ -387,8 +411,183 @@ export default function AttendanceService(){
         vacationService(req,res){
             const data = req.body
             const params = req.query.service
-            console.log(data)
-            console.log(params)
+
+            if(params === 'change'){
+                Vacation.find({company:data.company,userId:data.info.userId}).sort({'date':-1})
+                    .then(user=>{
+                        let now = new Date()
+                        let sendVacation = []
+                        user.map(e=>{
+                            if(now <= new Date(e.date)){
+                                sendVacation.push(e)
+                            }
+                        })
+                        if(req.query.checked === 'search'){
+                            res.status(200).send(sendVacation)
+                        }
+
+                        if(req.query.checked === 'delete'){
+                            let delPoint = data.delData
+                            let dateMap = delPoint.map(e=>e.date);
+
+                            User.findOne({userId:data.info.userId})
+                                .then(user=>{
+                                    let changeData = {
+                                            special:{
+                                                family:user.break.special.family + data.breakCount.family,
+                                                maternity:user.break.special.maternity + data.breakCount.maternity
+                                            },
+                                            year:user.break.year + data.breakCount.year,
+                                            month:user.break.month + data.breakCount.month,
+                                    }
+                                    User.findOneAndUpdate({userId:data.info.userId},{$set:{break:changeData}},{upsert:true})
+                                        .then(suc=>{
+                                            Vacation.deleteMany({userId:data.info.userId,date:dateMap})
+                                                .then(suc2=>{
+                                                    Vacation.find({company:data.company,userId:data.info.userId}).sort({'date':-1})
+                                                        .then(finalData=>{
+                                                            User.findOne({userId:data.info.userId})
+                                                                .then(userData=>{
+                                                                    let userPushData = {
+                                                                        company: userData.company,
+                                                                        affiliation:userData.affiliation,
+                                                                        info:{
+                                                                            name:userData.name,
+                                                                            userId: userData.userId,
+                                                                            phone: userData.phone},
+                                                                        break:userData.break,
+                                                                        form:userData.form,
+                                                                        etc:userData.etc,
+                                                                        expiresDate:data.loginData.expiresDate
+                                                                    }
+                                                                    let types = []
+                                                                    const typePoint = delPoint.map(e=>e.type)
+
+                                                                    typePoint.map(e=>{
+                                                                        if(e === 'month'){
+                                                                            types.push('월차')
+                                                                        }
+                                                                        if(e === 'year'){
+                                                                            types.push('연차')
+                                                                        }
+                                                                        if(e === 'family'){
+                                                                            types.push('경조사')
+                                                                        }
+                                                                        if(e === 'maternity'){
+                                                                            types.push('육아휴직')
+                                                                        }
+                                                                    })
+                                                                    SendService().VacationSMS('휴가취소',userData.company,userData.name,dateMap,[...new Set(types)],'취소')
+                                                                    res.status(200).json({vacation:finalData,userData:userPushData})
+                                                                })
+
+                                                        })
+                                                })
+                                        })
+
+
+                                })
+
+                        }
+
+                    })
+
+
+
+            }
+
+
+            if(params === 'getData'){
+                Vacation.find({company:data.company})
+                    .then(findData=>{
+                        Holiday.find({}).sort({"year":-1})
+                            .then(holidayData=>{
+                                User.find({company:data.company})
+                                    .then(userData=>{
+                                        let sendHolidayData = []
+
+                                        holidayData.map(e=>{
+                                            e.data.map(el=>{
+                                                if(el.name === '기독탄신일'){
+                                                    let pushData = {
+                                                        date:el.date,
+                                                        isHoliday:el.isHoliday,
+                                                        title:"크리스마스"
+                                                    }
+                                                    sendHolidayData.push(pushData)
+                                                }else{
+                                                    if(el.name === '1월1일'){
+                                                        let pushData = {
+                                                            date:el.date,
+                                                            isHoliday:el.isHoliday,
+                                                            title:"신정"
+                                                        }
+                                                        sendHolidayData.push(pushData)
+                                                    }else{
+                                                        let pushData = {
+                                                            date:el.date,
+                                                            isHoliday:el.isHoliday,
+                                                            title:el.name
+                                                        }
+                                                        sendHolidayData.push(pushData)
+                                                    }
+                                                }
+
+                                            })
+                                        })
+
+                                        findData.map(e=>{
+                                            let findData = userData.find(el=> el.userId === e.userId)
+                                            if(e.type === 'year'){
+                                                let pushData = {
+                                                    date:e.date,
+                                                    isHoliday:true,
+                                                    title:`연차: ${findData.affiliation.department} / ${findData.name}`
+                                                }
+                                                sendHolidayData.push(pushData)
+                                            }
+                                            if(e.type === 'month'){
+                                                let pushData = {
+                                                    date:e.date,
+                                                    isHoliday:true,
+                                                    title:`월차: ${findData.affiliation.department} / ${findData.name}`
+                                                }
+                                                sendHolidayData.push(pushData)
+                                            }
+                                            if(e.type === 'family'){
+                                                let pushData = {
+                                                    date:e.date,
+                                                    isHoliday:true,
+                                                    title:`경조사: ${findData.affiliation.department} / ${findData.name}`
+                                                }
+                                                sendHolidayData.push(pushData)
+                                            }
+                                            if(e.type === 'maternity'){
+                                                let pushData = {
+                                                    date:e.date,
+                                                    isHoliday:true,
+                                                    title:`육아휴직: ${findData.affiliation.department} / ${findData.name}`
+                                                }
+                                                sendHolidayData.push(pushData)
+                                            }
+                                            if(e.type === 'homeWork'){
+                                                let pushData = {
+                                                    date:e.date,
+                                                    isHoliday:false,
+                                                    title:`재택근무: ${findData.affiliation.department} / ${findData.name}`,
+                                                    info:'재택근무'
+                                                }
+                                                sendHolidayData.push(pushData)
+                                            }
+
+                                        })
+                                        res.status(200).send(sendHolidayData)
+                                    })
+
+                            })
+                    })
+            }
+
             if(params === 'signUp'){
                 let error = false
                 let duplicate = []
@@ -493,6 +692,8 @@ export default function AttendanceService(){
                                         }
                                     }
 
+
+
                                     User.findOneAndUpdate({company:data.company,userId:data.loginData.info.userId},{$set:changeData})
                                         .then(users=>{
                                             User.findOne({company:data.company,userId:data.loginData.info.userId})
@@ -507,6 +708,21 @@ export default function AttendanceService(){
                                                         etc:userData.etc,
                                                         expiresDate:data.loginData.expiresDate
                                                     }
+                                                    let typePoint ='';
+                                                    if(data.type === 'month'){
+                                                        typePoint = '월차'
+                                                    }
+                                                    if(data.type === 'year'){
+                                                        typePoint = '연차'
+                                                    }
+                                                    if(data.type === 'family'){
+                                                        typePoint = '경조사'
+                                                    }
+                                                    if(data.type === 'maternity'){
+                                                        typePoint = '육아휴직'
+                                                    }
+                                                    SendService().VacationSMS('휴가신청',userData.company,userData.name,data.breakDate,typePoint,'신청')
+
                                                     res.status(200).json({msg:'휴가신청 완료', userData:sendData})
                                                 })
                                         })
@@ -516,10 +732,6 @@ export default function AttendanceService(){
 
                                 })
 
-
-
-
-
                         }else{
                             res.status(402).send(`날짜 : ${duplicate.map(e=>e.date)}가 이미 휴가로 지정되어 있습니다. 다시 한번 확인해주세요.`)
                         }
@@ -528,6 +740,7 @@ export default function AttendanceService(){
                         res.status(400).send(err)
                     })
             }
+
         },
 
 

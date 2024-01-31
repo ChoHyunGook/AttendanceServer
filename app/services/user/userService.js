@@ -12,6 +12,7 @@ export default function UserService(){
 
     const User = db.User
     const Company = db.Company
+    const Device = db.Device
 
 
     return{
@@ -90,8 +91,23 @@ export default function UserService(){
                                 if (err) {
                                     res.status(500).send(err)
                                 } else {
-                                    res.status(200)
-                                        .json({message: '회원가입 성공.', data: User})
+                                    let tzData = moment().tz('Asia/Seoul')
+                                    let date = tzData.format('YYYY-MM-DD')
+                                    let time = tzData.format('kk:mm:ss')
+                                    let firstData = {
+                                        userId:data.userId,
+                                        date:date,
+                                        time:time
+                                    }
+                                    new Device(firstData).save((err)=>{
+                                        if(err){
+                                            res.status(400).send(err)
+                                        }else{
+                                            res.status(200)
+                                                .json({message: '회원가입 성공.', data: User})
+                                        }
+                                    })
+
                                 }
                             })
                         } else {
@@ -124,7 +140,14 @@ export default function UserService(){
                           try{
                               let time = moment().tz('Asia/Seoul')
                               let day = time.format('YYYY-MM-DD kk:mm:ss')
-                              let ex = moment(day).add(1,'hours').format('YYYY-MM-DD kk:mm:ss')
+                              let changeDay;
+                              if(day.split(' ')[1].split(':')[0] === '24'){
+                                  let splitData = day.split(' ')
+                                  changeDay = splitData[0]+' '+'00:'+splitData[1].split(':')[1]+':'+splitData[1].split(':')[2]
+                              }else{
+                                  changeDay = day
+                              }
+                              let ex = moment(changeDay).add(1,'hours').format('YYYY-MM-DD kk:mm:ss')
 
                               const accessToken = jwt.sign({
                                   company: user.company,
@@ -136,78 +159,73 @@ export default function UserService(){
                                   expiresDate:ex
                               },access_jwt_secret,{expiresIn:'1h'})
 
-                              if(user.form.admin === true){
-
-                                  Company.findOne({company:user.company})
-                                      .then(findData=>{
-                                          res.cookie('accessToken',accessToken,{
-                                              secure: false,
-                                              httpOnly: true
-                                          })
-                                          let sendData = {
-                                              company: user.company,
-                                              affiliation:user.affiliation,
-                                              info:{name:user.name,userId: user.userId,
-                                                  phone: user.phone},
-                                              break:user.break,
-                                              form:user.form,
-                                              etc:user.etc,
-                                              expiresDate:ex
-                                          }
-
-                                          res.status(200).json({userData:sendData,companyData:findData})
+                              Company.findOne({company:user.company})
+                                  .then(findData=>{
+                                      res.cookie('accessToken',accessToken,{
+                                          secure: false,
+                                          httpOnly: true
                                       })
-                              }
-                              if(user.form.manager === true){
-                                  Company.find({})
-                                      .then(allData=>{
-                                          res.cookie('accessToken',accessToken,{
-                                              secure: false,
-                                              httpOnly: true
-                                          })
-                                          let sendData = {
-                                              company: user.company,
-                                              affiliation:user.affiliation,
-                                              info:{name:user.name,userId: user.userId,
-                                                  phone: user.phone},
-                                              break:user.break,
-                                              form:user.form,
-                                              etc:user.etc,
-                                              expiresDate:ex
-                                          }
+                                      let sendData = {
+                                          company: user.company,
+                                          affiliation:user.affiliation,
+                                          info:{name:user.name,userId: user.userId,
+                                              phone: user.phone},
+                                          break:user.break,
+                                          form:user.form,
+                                          etc:user.etc,
+                                          expiresDate:ex
+                                      }
 
-                                          res.status(200).json({userData:sendData,companyData:allData})
-                                      })
-                              }
-                              if(user.form.normal === true){
+                                      res.status(200).json({userData:sendData,companyData:findData})
+                                  })
 
-                                  Company.findOne({company:user.company})
-                                      .then(allData=>{
-                                          let companyData = []
-
-                                          allData.organizations.map(e=>{
-                                              if(user.affiliation.department === e.department){
-                                                  companyData.push(e)
-                                              }
-                                          })
-                                          res.cookie('accessToken',accessToken,{
-                                              secure: false,
-                                              httpOnly: true
-                                          })
-                                          let sendData = {
-                                              company: user.company,
-                                              affiliation:user.affiliation,
-                                              info:{name:user.name,userId: user.userId,
-                                                  phone: user.phone},
-                                              break:user.break,
-                                              form:user.form,
-                                              etc:user.etc,
-                                              expiresDate:ex
-                                          }
-
-                                          res.status(200).json({userData:sendData,companyData:companyData[0]})
-                                      })
-                              }
+                              // if(user.form.admin === true){
+                              //
+                              //     Company.findOne({company:user.company})
+                              //         .then(findData=>{
+                              //             res.cookie('accessToken',accessToken,{
+                              //                 secure: false,
+                              //                 httpOnly: true
+                              //             })
+                              //             let sendData = {
+                              //                 company: user.company,
+                              //                 affiliation:user.affiliation,
+                              //                 info:{name:user.name,userId: user.userId,
+                              //                     phone: user.phone},
+                              //                 break:user.break,
+                              //                 form:user.form,
+                              //                 etc:user.etc,
+                              //                 expiresDate:ex
+                              //             }
+                              //
+                              //             res.status(200).json({userData:sendData,companyData:findData})
+                              //         })
+                              // }
+                              // if(user.form.manager === true){
+                              //     Company.findOne({company:user.company})
+                              //         .then(findData=>{
+                              //             res.cookie('accessToken',accessToken,{
+                              //                 secure: false,
+                              //                 httpOnly: true
+                              //             })
+                              //             let sendData = {
+                              //                 company: user.company,
+                              //                 affiliation:user.affiliation,
+                              //                 info:{name:user.name,userId: user.userId,
+                              //                     phone: user.phone},
+                              //                 break:user.break,
+                              //                 form:user.form,
+                              //                 etc:user.etc,
+                              //                 expiresDate:ex
+                              //             }
+                              //
+                              //             res.status(200).json({userData:sendData,companyData:findData})
+                              //         })
+                              // }
+                              // if(user.form.normal === true){
+                              //
+                              //
+                              // }
 
                           }catch (err){
                               res.status(400).send(err)
@@ -240,6 +258,7 @@ export default function UserService(){
                                     saveData = {...data,password:bcryptPwData
                                     }
                                 }
+
 
                                 User.findOneAndUpdate({userId:data.userId},{$set:saveData})
                                     .then(suc=>{
@@ -335,7 +354,14 @@ export default function UserService(){
             const data = req.body
             let time = moment().tz('Asia/Seoul')
             let day = time.format('YYYY-MM-DD kk:mm:ss')
-            let ex = moment(day).add(1,'hours').format('YYYY-MM-DD kk:mm:ss')
+            let changeDay;
+            if(day.split(' ')[1].split(':')[0] === '24'){
+                let splitData = day.split(' ')
+                changeDay = splitData[0]+' '+'00:'+splitData[1].split(':')[1]+':'+splitData[1].split(':')[2]
+            }else{
+                changeDay = day
+            }
+            let ex = moment(changeDay).add(1,'hours').format('YYYY-MM-DD kk:mm:ss')
 
             User.findOne({company:data.company,userId:data.userId,name:data.name,phone:data.phone})
                 .then(user=>{

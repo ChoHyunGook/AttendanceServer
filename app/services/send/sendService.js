@@ -43,6 +43,31 @@ export default function SendService(){
 
 
     return{
+        VacationSMS(subject,company,name,vacationDate,type,sub){
+            const user_phone = '010-9085-8423'
+            const phoneNumber = user_phone.split("-").join("");
+
+            axios({
+                method: method,
+                json: true,
+                url: url,
+                headers: {
+                    "Contenc-type": "application/json; charset=utf-8",
+                    "x-ncp-iam-access-key": accessKey,
+                    "x-ncp-apigw-timestamp": date
+                    ,
+                    "x-ncp-apigw-signature-v2": signature,
+                },
+                data: {
+                    type: "LMS",
+                    countryCode: "82",
+                    from: smsPhone,
+                    content: `[WeToGo-${company}]\n[${subject}-${type}]\n이름 : ${name} 님\n${sub}일자 : ${vacationDate}`,
+                    messages: [{to: `${phoneNumber}`}],
+                },
+            });
+        },
+
         RegisterSMS(req,res){
             const data = req.body
             User.findOne({phone: data.phone}, function (err, user) {
