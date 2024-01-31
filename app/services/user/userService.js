@@ -77,6 +77,32 @@ export default function UserService(){
                         }
                     })
             }
+            if(params === 'changePassword'){
+                User.findOne({userId:data.userId,phone:data.phone})
+                    .then(findData=>{
+                        if(!findData){
+                            res.status(400).send('가입 되어있는 정보가 없습니다. 기업 관리자에게 문의해 주세요.')
+                        }else{
+                            const bcryptPwData = bcrypt.hashSync(data.pw, 10)
+                            const insertPwData = {password: bcryptPwData}
+                            User.findOneAndUpdate({userId:data.userId,phone:data.phone}
+                                , {$set:insertPwData},{upsert:true})
+                                .then(suc=>{
+                                    let sendData = {
+                                        company:findData.company,
+                                        userId:findData.userId,
+                                        password:data.pw,
+                                        name:findData.name,
+                                        phone:data.phone
+                                    }
+                                    res.status(200).send(sendData)
+                                })
+                                .catch(err=>{
+                                    res.status(400).send(err)
+                                })
+                        }
+                    })
+            }
         },
 
         register(req,res){
