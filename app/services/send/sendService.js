@@ -10,7 +10,7 @@ import bcrypt from "bcrypt";
 export default function SendService(){
 
     const {
-        SMS_service_id,SMS_secret_key,SMS_access_key,SMS_PHONE,authNum_jwt_secret
+        SMS_service_id,SMS_secret_key,SMS_access_key,SMS_PHONE,authNum_jwt_secret,VACATION_SMS
     } = applyDotenv(dotenv)
 
     const User = db.User
@@ -44,7 +44,7 @@ export default function SendService(){
 
     return{
         VacationSMS(subject,company,name,vacationDate,type,sub){
-            const user_phone = '010-9085-8423'
+            const user_phone = VACATION_SMS
             const phoneNumber = user_phone.split("-").join("");
 
             axios({

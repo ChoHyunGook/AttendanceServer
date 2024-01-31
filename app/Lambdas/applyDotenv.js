@@ -3,6 +3,7 @@
 const applyDotenv = dotenv => {
     dotenv.config()
     return{
+        VACATION_SMS:process.env.VACATION_SMS,
         port:process.env.PORT,
         origin:process.env.ORIGIN,
         mongoUri:process.env.MONGO_URI,
