@@ -271,9 +271,8 @@ export default function UserService(){
                 .then(findData=>{
                     User.find({phone:data.phone})
                         .then(dupData=>{
-                            const duplicateData = dupData[0]
-
-                            if(duplicateData.userId === data.userId || dupData.length === 0){
+                            if(dupData.length === 0){
+                                //없으니 진행
                                 let saveData
                                 if(params === 'true'){
                                     saveData = {...data,password:findData.password
@@ -284,8 +283,6 @@ export default function UserService(){
                                     saveData = {...data,password:bcryptPwData
                                     }
                                 }
-
-
                                 User.findOneAndUpdate({userId:data.userId},{$set:saveData})
                                     .then(suc=>{
                                         const tokenData = req.cookies.accessToken
@@ -326,6 +323,7 @@ export default function UserService(){
                             }else{
                                 res.status(400).send('이미 사용중인 전화번호 입니다.')
                             }
+
                         })
                 })
                 .catch(err=>{
